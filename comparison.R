@@ -19,7 +19,7 @@ loclin.plug <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
   
   ## calculate sigma1.sq, get estimates of local linear estimator at each data point
   h.sigma1 <- lpbwselect(R.hat, X[, ind], eval = X[, ind], p = 1, bwselect = "mse-dpi",
-                         kernel = "uni")$bws[, "h"]
+                         kernel = "uni", bwregul = 0)$bws[, "h"]
   # h.sigma1 <- n^(-0.2)
   # check for single bandwidth or a vector
   if (length(h.sigma1)==1) h.sigma1 <- rep(h.sigma1, n)
@@ -41,10 +41,10 @@ loclin.plug <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
   if (is.null(h)) {
     # h <- npregbw(R.hat~X[, ind], regtype="ll")$bw
     # h <- n^(-0.2)
-    h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "ce-dpi", deriv = 1,
-                    kernel = "uni")$bws[, "h"]
+    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
+    #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.hat, deg = 1, kernel = SqK)
-    # h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK)
+    h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK)
   }
   # check for single bandwidth or a vector
   if (length(h)==1) h <- rep(h, n.eval)
@@ -81,17 +81,20 @@ loclin.plug <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
 ### true.cdf, the true CDF of X_1
 ### e, continuous, the error term (n by 1 vector), used
 ###    to construct R.true
-loclin.orac <- function(X, y, x.eval, g_act, true.cdf, e, ind, h=NULL) {
+loclin.orac <- function(X, y, sam.obj, x.eval, g_act, true.cdf, e, ind, h=NULL) {
   n <- nrow(X)
   p <- ncol(X)
   n.eval <- length(x.eval)
   
+  # calculate R by detracting nuisance function
+  f.hat <- predict.SAM(sam.obj, X)
+  R.hat <- y - apply(f.hat[,-ind], 1, sum)
   # calculate R.true by detracting true nuisance function
   R.true <- g_act[[ind]](true.cdf(X[, ind])) + e
   
   ## calculate sigma1.sq, get estimates of local linear estimator at each data point
   h.sigma1 <- lpbwselect(R.true, X[, ind], eval = X[, ind], p = 1, bwselect = "mse-dpi",
-                         kernel = "uni")$bws[, "h"]
+                         kernel = "uni", bwregul = 0)$bws[, "h"]
   # h.sigma1 <- n^(-0.2)
   # check for single bandwidth or a vector
   if (length(h.sigma1)==1) h.sigma1 <- rep(h.sigma1, n)
@@ -110,13 +113,14 @@ loclin.orac <- function(X, y, x.eval, g_act, true.cdf, e, ind, h=NULL) {
   sigma1.sq <- mean(res^2) # estimate of sigma1.sq
   print(sigma1.sq)
   
+  # use the same bandwidth for all estimators
   if (is.null(h)) {
     # h <- npregbw(R.true~X[, ind], regtype="ll")$bw
     # h <- n^(-0.2)
-    h <- lpbwselect(R.true, X[, ind], eval = x.eval, p = 1, bwselect = "ce-dpi", deriv = 1,
-                    kernel = "uni")$bws[, "h"]
+    # h <- lpbwselect(R.true, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
+    #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.true, deg = 1, kernel = SqK)
-    # h <- thumbBw(X[, ind], R.true, deg = 1, kernel = SqK)
+    h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK) # use the same bandwidth
   }
   # check for single bandwidth or a vector
   if (length(h)==1) h <- rep(h, n.eval)
