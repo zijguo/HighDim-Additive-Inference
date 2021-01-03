@@ -114,7 +114,7 @@ f.hat <- predict.SAM(out.sam, X)
 # true value of f^{'}_1 at x.eval
 f1.deriv(x.eval)
 
-# point estimate of DLL at x.eval of the first dimension
+# DLL point estimate of f'_ind(x.eval) 
 DLL.out <- DLL(X, y, out.sam, x.eval, ind=1)
 DLL.out$est # point estimate
 DLL.out$est.se # the standard error
