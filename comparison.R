@@ -120,7 +120,7 @@ loclin.orac <- function(X, y, sam.obj, x.eval, g_act, true.cdf, e, ind, h=NULL) 
     # h <- lpbwselect(R.true, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
     #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.true, deg = 1, kernel = SqK)
-    h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK) # use the same bandwidth
+    h <- thumbBw(X[, ind], R.true, deg = 1, kernel = SqK)
   }
   # check for single bandwidth or a vector
   if (length(h)==1) h <- rep(h, n.eval)
