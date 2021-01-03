@@ -48,6 +48,7 @@ cv.SAM <- function(X, y, nfold=10, degree=3, lam.seq=NULL) {
   
   # cross validation procedures
   # break the index into n folds
+  ############## Zijian: Wei, can we use another symbol instead of n as n stands for the sample size,correct?               
   folds <- cut(seq(1,n),breaks=nfold,labels=FALSE)
   for (i in 1:len_d) {
     mse.lam <- rep(0, len_lam)
