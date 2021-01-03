@@ -16,22 +16,26 @@
 ###        nfold, integer, the numbers of folds for cross validation,
 ###               default value is 10
 ###        degree, vector of integers, a sequence of number of basis 
-###                functions to be considered, default is 3:4
+###                functions to be considered, default is 3
 ###        lam.seq, continuous, a sequence of lambdas to be considered,
-###                 usually in decreasing order to speed up
+###                 usually in decreasing order to speed up, default is
+###                 0.5^(seq(0, 10, l=200))
 ### Output: a list of
 ###         Z.hat, the transformed covariates in a compact support, 
-###                [0, 1] in our case
+###                [0, 1] using quantile transformation in our case
 ###         best.sam, the sparse additive model object as in the SAM
 ###                  package with the best parameters
 ###         sigma1.sq, the consistent estimate of the variance of the
 ###                    noise using the mean squared errors
 ###         X, the input covariates
-cv.SAM <- function(X, y, nfold=10, degree=3:4, lam.seq) {
+cv.SAM <- function(X, y, nfold=10, degree=3, lam.seq=NULL) {
   # quantile transformation of X
   Z.hat <- apply(X, 2, function(x) ecdf(x)(x))
   
-  n <- nrow(Z.hat); p <- nrow(Z.hat)
+  # default lambda sequence, approximately from 0.001 to 1
+  if (is.null(lam.seq)) lam.seq <- 0.5^seq(0, 10, l=200)
+  
+  n <- nrow(Z.hat); p <- ncol(Z.hat)
   # randomly shuffle the data
   shuffle_ind <- sample(1:n)
   Z.hat <- Z.hat[shuffle_ind, ]
@@ -231,10 +235,10 @@ DLL <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
   if (is.null(h)) {
     # h <- npregbw(R.hat~X[, ind], regtype="ll")$bw
     # h <- n^(-0.2)
-    h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "ce-dpi", deriv = 1,
-                    kernel = "uni")$bws[, "h"]
+    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
+    #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.hat, deg = 1, kernel = SqK)
-    # h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK)
+    h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK)
   }
   
   # check for single bandwidth or a vector
@@ -263,9 +267,9 @@ DLL <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
     
     D.tilde <- (X[, ind] - rep(x.eval[j], n)) - l
     D.hat <- D.tilde - sum(Kh*D.tilde)/sum(Kh)
+    
     ### calculate Sn
     Sn.j <- 1/n*sum(D.hat*(X[, ind]-rep(x.eval[j], n))*Kh)
-    
     est[j] <- 1/(n*Sn.j)*sum(D.hat*R.hat*Kh)
     Sn[j] <- Sn.j
     est.se[j] <- sqrt(sigma1.sq/(n^2*Sn.j^2)*sum(D.hat^2*Kh^2))
