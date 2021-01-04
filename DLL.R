@@ -13,7 +13,7 @@
 ###           best tuning parameter lambda
 ### Input: X, continuous, the covariates (n by p matrix)
 ###        y, continuous, the outcome (n by 1 vector)
-###        nfold, integer, the numbers of folds for cross validation,
+###        kfold, integer, the numbers of folds for cross validation,
 ###               default value is 10
 ###        degree, vector of integers, a sequence of number of basis 
 ###                functions to be considered, default is 3
@@ -28,7 +28,7 @@
 ###         sigma1.sq, the consistent estimate of the variance of the
 ###                    noise using the mean squared errors
 ###         X, the input covariates
-cv.SAM <- function(X, y, nfold=10, degree=3, lam.seq=NULL) {
+cv.SAM <- function(X, y, kfold=10, degree=3, lam.seq=NULL) {
   # quantile transformation of X
   Z.hat <- apply(X, 2, function(x) ecdf(x)(x))
   
@@ -47,12 +47,11 @@ cv.SAM <- function(X, y, nfold=10, degree=3, lam.seq=NULL) {
   colnames(MSE) <- c("degree", "lambda", "MSE")
   
   # cross validation procedures
-  # break the index into n folds
-  ############## Zijian: Wei, can we use another symbol instead of n as n stands for the sample size,correct?               
-  folds <- cut(seq(1,n),breaks=nfold,labels=FALSE)
+  # break the index into k folds
+  folds <- cut(seq(1,n),breaks=kfold,labels=FALSE)
   for (i in 1:len_d) {
     mse.lam <- rep(0, len_lam)
-    for (fold in 1:nfold) {
+    for (fold in 1:kfold) {
       testInd <- which(folds == fold, arr.ind = TRUE)
       # create train and test data
       test_Z <- Z.hat[testInd, ]
@@ -62,7 +61,7 @@ cv.SAM <- function(X, y, nfold=10, degree=3, lam.seq=NULL) {
       
       sam.fit <- samQL(train_Z, train_y, p = degree[i], lambda = lam.seq)
       y_pred <- predict(sam.fit, newdata = test_Z)$values
-      mse.lam <- mse.lam + apply(test_y-y_pred, 2, function(x) mean(x^2))/nfold
+      mse.lam <- mse.lam + apply(test_y-y_pred, 2, function(x) mean(x^2))/kfold
     }
     
     temp.lam <- lam.seq[which.min(mse.lam)]
@@ -90,7 +89,8 @@ cv.SAM <- function(X, y, nfold=10, degree=3, lam.seq=NULL) {
 ###           fitted sparse additive models and the test data
 ### Input: sam.obj, the fitted sparse additive model in cv.SAM
 ###        Xt, continuous, the test covariates (nt by p matrix)
-### Output: f.hat, the estimated functions (nt by p matrix)
+### Output: f.hat, the estimated functions including an intercept 
+###                (nt by p+1 matrix)
 predict.SAM <- function(sam.obj, Xt) {
   nt <- nrow(Xt)
   p <- ncol(Xt)
@@ -111,6 +111,10 @@ predict.SAM <- function(sam.obj, Xt) {
     ind.j <- (j-1)*best.sam$p + c(1:best.sam$p) # index of the target component function in each loop
     f.hat[, j] <- bspline %*% best.sam$w[ind.j]
   }
+  
+  # add the intercept
+  f.hat <- cbind(rep(best.sam$intercept, nt), f.hat)
+  colnames(f.hat) <- c("Intercept", paste("X", 1:p, sep = ""))
   return(f.hat)
 }
 
@@ -231,12 +235,12 @@ DLL <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
   sigma1.sq <- sam.obj$sigma1.sq # get sigma1.sq for variance estimation
   
   # calculate R by detracting nuisance function
-  R.hat <- y - apply(f.hat[,-ind], 1, sum)
+  R.hat <- y - apply(f.hat[,-(ind+1)], 1, sum) # skip the intercept
   
   if (is.null(h)) {
     # h <- npregbw(R.hat~X[, ind], regtype="ll")$bw
     # h <- n^(-0.2)
-    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
+    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "ce-dpi", deriv = 1,
     #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.hat, deg = 1, kernel = SqK)
     h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK)
