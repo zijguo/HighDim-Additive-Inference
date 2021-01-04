@@ -15,7 +15,7 @@ loclin.plug <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
   
   f.hat <- predict.SAM(sam.obj, X)
   # calculate R by detracting nuisance function
-  R.hat <- y - apply(f.hat[,-ind], 1, sum)
+  R.hat <- y - apply(f.hat[,-(ind+1)], 1, sum) # skip the intercept
   
   ## calculate sigma1.sq, get estimates of local linear estimator at each data point
   h.sigma1 <- lpbwselect(R.hat, X[, ind], eval = X[, ind], p = 1, bwselect = "mse-dpi",
@@ -41,7 +41,7 @@ loclin.plug <- function(X, y, sam.obj, x.eval, ind, h=NULL) {
   if (is.null(h)) {
     # h <- npregbw(R.hat~X[, ind], regtype="ll")$bw
     # h <- n^(-0.2)
-    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
+    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "ce-dpi", deriv = 1,
     #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.hat, deg = 1, kernel = SqK)
     h <- thumbBw(X[, ind], R.hat, deg = 1, kernel = SqK)
@@ -88,7 +88,7 @@ loclin.orac <- function(X, y, sam.obj, x.eval, g_act, true.cdf, e, ind, h=NULL) 
   
   # calculate R by detracting nuisance function
   f.hat <- predict.SAM(sam.obj, X)
-  R.hat <- y - apply(f.hat[,-ind], 1, sum)
+  R.hat <- y - apply(f.hat[,-(ind+1)], 1, sum) # skip the intercept
   # calculate R.true by detracting true nuisance function
   R.true <- g_act[[ind]](true.cdf(X[, ind])) + e
   
@@ -117,10 +117,10 @@ loclin.orac <- function(X, y, sam.obj, x.eval, g_act, true.cdf, e, ind, h=NULL) 
   if (is.null(h)) {
     # h <- npregbw(R.true~X[, ind], regtype="ll")$bw
     # h <- n^(-0.2)
-    # h <- lpbwselect(R.true, X[, ind], eval = x.eval, p = 1, bwselect = "mse-dpi",
+    # h <- lpbwselect(R.hat, X[, ind], eval = x.eval, p = 1, bwselect = "ce-dpi", deriv = 1,
     #                 kernel = "uni")$bws[, "h"]
     # h <- regCVBwSelC(X[, ind], R.true, deg = 1, kernel = SqK)
-    h <- thumbBw(X[, ind], R.true, deg = 1, kernel = SqK)
+    h <- thumbBw(X[, ind], R.true, deg = 1, kernel = SqK) # use the same bandwidth
   }
   # check for single bandwidth or a vector
   if (length(h)==1) h <- rep(h, n.eval)
