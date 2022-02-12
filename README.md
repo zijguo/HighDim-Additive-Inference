@@ -43,8 +43,8 @@ g5 = function(x) 0.5*x
 
 
 # sample size and dimension of X
-n = 200
-p = 100
+n = 500
+p = 500
 
 # covariance structure of D and X
 Cov_Matrix = toeplitz(c(1, 0.7, 0.5, 0.3, seq(0.1, 0, length.out = p-3)))
@@ -71,9 +71,9 @@ point estimates
 
 ``` r
 DLL.model$est
-#>             f1
-#> -0.5 0.9465007
-#> 0.25 1.5212718
+#>            f1
+#> -0.5 1.258581
+#> 0.25 1.659544
 ```
 
 standard errors
@@ -81,8 +81,8 @@ standard errors
 ``` r
 DLL.model$est.se
 #>             f1
-#> -0.5 0.4434598
-#> 0.25 0.5188148
+#> -0.5 0.3911074
+#> 0.25 0.4301377
 ```
 
 confidence interval
@@ -90,12 +90,12 @@ confidence interval
 ``` r
 DLL.model$CI
 #> $lower
-#>              f1
-#> -0.5 0.07733541
-#> 0.25 0.50441340
+#>             f1
+#> -0.5 0.4920249
+#> 0.25 0.8164900
 #> 
 #> $upper
 #>            f1
-#> -0.5 1.815666
-#> 0.25 2.538130
+#> -0.5 2.025138
+#> 0.25 2.502599
 ```
