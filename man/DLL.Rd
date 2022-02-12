@@ -66,7 +66,7 @@ g4 = function(x) 0.75*x
 g5 = function(x) 0.5*x
 # sample size and dimension of X
 n = 200
-p = 200
+p = 100
 # covariance structure of D and X
 Cov_Matrix = toeplitz(c(1, 0.7, 0.5, 0.3, seq(0.1, 0, length.out = p-3)))
 set.seed(123)
