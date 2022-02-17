@@ -193,12 +193,19 @@ DLL = function(X, y, D.ind, d0, h=NULL, lam.seq = NULL, treatment.SAM=FALSE, dat
   }
 
   # confidence interval
-  CI = rep(list(NA),2)
-  names(CI) = c("lower","upper")
-  CI[[1]] = est + qnorm(alpha/2)*est.se
-  CI[[2]] = est + qnorm(1-alpha/2)*est.se
-
-
+  # CI = rep(list(NA),2)
+  # names(CI) = c("lower","upper")
+  # CI[[1]] = est + qnorm(alpha/2)*est.se
+  # CI[[2]] = est + qnorm(1-alpha/2)*est.se
+  CI = rep(list(NA), length(D.ind))
+  names(CI) = paste("f",as.character(D.ind),sep="")
+  for(d.ind in 1:length(D.ind)){
+    CI[[d.ind]] = matrix(NA, nrow=n.d0, ncol=2)
+    colnames(CI[[d.ind]]) = c("lower", "upper")
+    rownames(CI[[d.ind]]) = d0
+    CI[[d.ind]][,1] = est[,d.ind] + qnorm(alpha/2)*est.se[,d.ind]
+    CI[[d.ind]][,2] = est[,d.ind] + qnorm(1-alpha/2)*est.se[,d.ind]
+  }
   returnList = list(est = est,
                     est.se = est.se,
                     CI = CI,
